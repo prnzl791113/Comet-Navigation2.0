@@ -21,18 +21,29 @@ public class MapMover : MonoBehaviour
     [SerializeField] public UnityEngine.UI.Image _compassImage;
     [SerializeField] private int currLevel = 1;
     [SerializeField] private TMPro.TMP_InputField inpfield;
-    [SerializeField] private TMPro.TextMeshProUGUI coordinatesText;
 
     [SerializeField] private TMPro.TextMeshProUGUI durationText;
+    [SerializeField] private TMPro.TextMeshProUGUI destinationText;
+    [SerializeField] private TMPro.TextMeshProUGUI distanceText;
 
     private ARWorldPositioningCameraHelper _cameraHelper;
     [SerializeField] private Button sub;
     [SerializeField] private Button exitButton;
 
     [SerializeField] public LineRenderer lineRenderer;
+
+    [SerializeField] public GameObject StartCanvas;
+    [SerializeField] public GameObject NavigationCanvas;
+    [SerializeField] public GameObject infoPanel;
+
+    [SerializeField] public Button infoButton;
+    [SerializeField] public Button infoCloseButton;
+
+
+
+
     private ARWorldPositioningObjectHelper _objectPosHelper;
     private List<Datum> possiblePlaces = new List<Datum>();
-
     private double currlat = 32.986313;
     private double currlon = -96.748009;
     private double destlat;
@@ -48,10 +59,7 @@ public class MapMover : MonoBehaviour
     public void Start()
     {
 
-       // Color newColor = _compassImage.color;
-        //newColor.a = 0;
-       // _compassImage.color = newColor;
-       durationText.text = "";
+        durationText.text = "Loading";
         coordinates = new List<List<double>>();
         sub.onClick.AddListener(doerListner);
         _cameraHelper = _arCameraManager.GetComponent<ARWorldPositioningCameraHelper>();
@@ -65,21 +73,30 @@ public class MapMover : MonoBehaviour
         {
             Debug.Log("Object helper is null");
         }
-       // exitButton.gameObject.SetActive(false);
-        //exitButton.onClick.AddListener(destroySpheres);
+        NavigationCanvas.SetActive(false);
+        infoButton.onClick.AddListener(InfoOpen);
 
-       //  GameObject demoObj = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+        
+        // exitButton.gameObject.SetActive(false);
+
+        //  GameObject demoObj = GameObject.CreatePrimitive(PrimitiveType.Sphere);
         // Quaternion rot = Quaternion.LookRotation(Vector3.up, Vector3.up);
-       //  demoObj.GetComponent<Renderer>().material.color = Color.blue;
-       //  demoObj.transform.localScale = new Vector3(2, 2, 2);
-         //Debug.Log("preparing to add object");
-         //_objectPosHelper.AddOrUpdateObject(gameObject: demoObj, latitude: 32.98454f, longitude: -96.75187f, altitude: 0, rotationXYZToEUN: Quaternion.identity);
+        //  demoObj.GetComponent<Renderer>().material.color = Color.blue;
+        //  demoObj.transform.localScale = new Vector3(2, 2, 2);
+        //Debug.Log("preparing to add object");
+        //_objectPosHelper.AddOrUpdateObject(gameObject: demoObj, latitude: 32.98454f, longitude: -96.75187f, altitude: 0, rotationXYZToEUN: Quaternion.identity);
         // Debug.Log("added object");
 
     }
     void doerListner()
     {
         StartCoroutine(doer());
+
+    }
+    void InfoOpen()
+    {
+        infoPanel.SetActive(true);
+        infoCloseButton.onClick.AddListener(() => infoPanel.SetActive(false));
     }
 
     IEnumerator doer()
@@ -97,11 +114,10 @@ public class MapMover : MonoBehaviour
         //float heading = _cameraHelper.TrueHeading;
         //_compassImage.rectTransform.rotation = Quaternion.Euler(0, 0, heading);
 
-       // coordinatesText.text = "Latitude: " + _cameraHelper.Latitude + "\nLongitude: " + _cameraHelper.Longitude;
 
-        //NEED TO ENABLE THINGS WHEN DEMOING
-        currlat = _cameraHelper.Latitude;
-        currlon = _cameraHelper.Longitude;
+        //NEED TO ENABLE THIS WHEN DEMOING
+        //currlat = _cameraHelper.Latitude;
+        //currlon = _cameraHelper.Longitude;
 
     }
     void destroySpheres()
@@ -111,9 +127,17 @@ public class MapMover : MonoBehaviour
             Destroy(sphere);
         }
         markers2.Clear();
-        exitButton.gameObject.SetActive(false);
+        NavigationCanvas.SetActive(false);
+        StartCanvas.SetActive(true);
+        Debug.Log("Destroyed");
     }
+    void navigationSwitcher()
+    {
+        StartCanvas.SetActive(false);
+        NavigationCanvas.SetActive(true);
+        exitButton.onClick.AddListener(destroySpheres);
 
+    }
     IEnumerator GetCoordinates(Action onReceived)
     {
         Debug.LogFormat("Making a request from {0}", $"https://api.concept3d.com/wayfinding/?map=1772&v2=true&toLat={destlat}&toLng={destlon}&toLevel={destLevel}&currentLevel=0&stamp=MEnBfBYK&fromLevel={currLevel}&fromLat={currlat}&fromLng={currlon}&key=0001085cc708b9cef47080f064612ca5");
@@ -124,9 +148,11 @@ public class MapMover : MonoBehaviour
             if (www.isNetworkError || www.isHttpError)
             {
                 Debug.Log(www.error);
+
             }
             else
             {
+
                 Debug.Log("Got text in route call!");
                 // Show results as text
                 json = www.downloadHandler.text;
@@ -141,7 +167,7 @@ public class MapMover : MonoBehaviour
                 });
 
                 durationText.text = $"Duration: {myDeserializedClass.formattedDuration}";
-
+                distanceText.text = $"{myDeserializedClass.distance} meters";
                 Debug.Log("finished getting coordinates");
                 //Debug.Log(string.Join(", ", coordinates));
                 onReceived?.Invoke();
@@ -161,6 +187,7 @@ public class MapMover : MonoBehaviour
         Debug.Log("reached to autocomplete");
         string requrl;
         Debug.Log("The text in the textfield is" + str[0]);
+
         if (str.Length == 1)
         {
             requrl = $"https://api.concept3d.com/search?map=1772&q={str[0]}&ppage=5&key=0001085cc708b9cef47080f064612ca5";
@@ -194,6 +221,15 @@ public class MapMover : MonoBehaviour
                     possiblePlaces.Add(d);
                 }
 
+                if (possiblePlaces.Count > 0)
+                {
+                    destinationText.text = $"{possiblePlaces.ElementAt(0).name}";
+                }
+                else
+                {
+                    destinationText.text = inpfield.text;
+                }
+
                 destlat = myDeserializedClass.data[0].lat;
                 destlon = myDeserializedClass.data[0].lng;
                 destLevel = myDeserializedClass.data[0].level.ElementAt(0);
@@ -212,39 +248,51 @@ public class MapMover : MonoBehaviour
         foreach (List<double> coord in coordinates)
         {
             GameObject newSphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-           // Quaternion rot = Quaternion.LookRotation(Vector3.up, Vector3.up);
+            // Quaternion rot = Quaternion.LookRotation(Vector3.up, Vector3.up);
             //newSphere.GetComponent<Renderer>().material.color = Color.blue;
             newSphere.GetComponent<Renderer>().enabled = false; //Make it invisible
             //newSphere.transform.localScale = new Vector3(5, 5, 5);
-            newSphere.transform.localScale -= new Vector3(0.5f,0.5f,0.5f);
+            newSphere.transform.localScale -= new Vector3(0.5f, 0.5f, 0.5f);
             _objectPosHelper.AddOrUpdateObject(gameObject: newSphere, latitude: coord[0], longitude: coord[1], altitude: 0, rotationXYZToEUN: Quaternion.identity);
             Debug.LogFormat("adding sphere at {0}, {1}", coord[0], coord[1]);
             markers2.Add(newSphere);
         }
+        if (markers2.Count < 0)
+        {
+            Debug.Log("Please check your entry");
+
+        }
+        else
+        {
+            navigationSwitcher();
+        }
+        infoPanel.SetActive(false);
         //exitButton.gameObject.SetActive(true);
         Debug.Log("Done placing spheres");
 
-       // NavMeshPath path = new NavMeshPath();
-        Vector3 navDest = new Vector3(x: _cameraHelper.transform.position.x, y: _cameraHelper.transform.position.y, z:markers2.Last().transform.position.z);
+        // NavMeshPath path = new NavMeshPath();
+        Vector3 navDest = new Vector3(x: _cameraHelper.transform.position.x, y: _cameraHelper.transform.position.y, z: markers2.Last().transform.position.z);
         //NavMesh.CalculatePath(_cameraHelper.transform.position, navDest, NavMesh.AllAreas, path); //Saves the path in the path variable.
         //lineRenderer.positionCount
-              lineRenderer.startColor = Color.blue;
-                      lineRenderer.endColor = Color.blue;
-                     // lineRenderer.material.alp
-                      lineRenderer.startWidth = 1.0f;
-                      lineRenderer.endWidth = 1.0f;
-                      lineRenderer.positionCount = markers2.Count;
-                      lineRenderer.useWorldSpace = true; 
-                      int i = 0;
-        foreach (GameObject obj in markers2) {
+        lineRenderer.startColor = Color.blue;
+        lineRenderer.endColor = Color.blue;
+        // lineRenderer.material.alp
+        lineRenderer.startWidth = 1.0f;
+        lineRenderer.endWidth = 1.0f;
+        lineRenderer.positionCount = markers2.Count;
+        lineRenderer.useWorldSpace = true;
+        int i = 0;
+        foreach (GameObject obj in markers2)
+        {
             Vector3 newPos = obj.transform.position;
             newPos.y -= 1;
             lineRenderer.SetPosition(i, newPos);
             i++;
-            }
+        }
         //Vector3[] corners = path.corners;
         //lineRenderer.SetPositions(corners);
         Debug.Log("Added line!");
+
     }
 }
 

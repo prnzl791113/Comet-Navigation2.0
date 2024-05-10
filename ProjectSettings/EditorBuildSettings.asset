@@ -4,7 +4,10 @@
 EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
-  m_Scenes: []
+  m_Scenes:
+  - enabled: 1
+    path: Assets/Scenes/SampleScene.unity
+    guid: 9fc0d4010bbf28b4594072e72b8655ab
   m_configObjects:
     Niantic.Lightship.AR.LightshipSettings: {fileID: 11400000, guid: bea034fa9148042a5bd9165ed1bd9b4c, type: 2}
     Niantic.Lightship.AR.WorldPositioningSettings: {fileID: 11400000, guid: 287d3ee02f1444fe181d0c0bc022e76a, type: 2}
