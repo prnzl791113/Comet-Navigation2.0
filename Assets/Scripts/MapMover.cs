@@ -116,8 +116,8 @@ public class MapMover : MonoBehaviour
 
 
         //NEED TO ENABLE THIS WHEN DEMOING
-        //currlat = _cameraHelper.Latitude;
-        //currlon = _cameraHelper.Longitude;
+        currlat = _cameraHelper.Latitude;
+        currlon = _cameraHelper.Longitude;
 
     }
     void destroySpheres()
